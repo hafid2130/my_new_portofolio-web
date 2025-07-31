@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        /* CSS untuk chatbot sederhana */
+        #chatbot-toggle-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #3B82F6; /* Tailwind blue-500 */
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1001; /* Pastikan di atas container */
+        }
+
+        #simple-chatbot-container {
+            position: fixed;
+            bottom: 80px; /* Di atas tombol toggle */
+            right: 20px;
+            width: 300px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-family: Arial, sans-serif;
+            display: none; /* Sembunyikan secara default */
+            flex-direction: column; /* Mengatur layout internal */
+        }
+        #chatbot-header {
+            background-color: #F3F4F6; /* Tailwind gray-100 */
+            padding: 10px;
+            border-bottom: 1px solid #D1D5DB; /* Tailwind gray-300 */
+            cursor: pointer;
+            font-weight: bold;
+            text-align: center;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            position: relative; /* Untuk tombol close */
+        }
+        #chatbot-header .close-button {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            color: #6B7280; /* Tailwind gray-500 */
+        }
+        #chatbot-body {
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            flex-grow: 1; /* Memungkinkan body untuk tumbuh */
+            display: flex; /* Untuk layout pesan */
+            flex-direction: column;
+        }
+        #chatbot-input-area {
+            border-top: 1px solid #D1D5DB; /* Tailwind gray-300 */
+            padding: 10px;
+            display: flex;
+        }
+        #chatbot-input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #E5E7EB; /* Tailwind gray-200 */
+            border-radius: 4px;
+            margin-right: 5px;
+            outline: none; /* Hilangkan outline default */
+        }
+        #chatbot-input:focus {
+            border-color: #3B82F6; /* Tailwind blue-500 saat focus */
+        }
+        #chatbot-send-btn {
+            padding: 8px 12px;
+            background-color: #3B82F6; /* Tailwind blue-500 */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        #chatbot-send-btn:hover {
+            background-color: #2563EB; /* Tailwind blue-600 */
+        }
+        .chatbot-message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 15px; /* Lebih bulat */
+            max-width: 80%; /* Batasi lebar pesan */
+            word-wrap: break-word; /* Pastikan teks membungkus */
+        }
+        .chatbot-message.bot {
+            background-color: #DBEAFE; /* Tailwind blue-100 */
+            text-align: left;
+            align-self: flex-start; /* Sejajarkan ke kiri */
+            color: #1E40AF; /* Tailwind blue-800 */
+        }
+        .chatbot-message.user {
+            background-color: #E5E7EB; /* Tailwind gray-200 */
+            text-align: right;
+            align-self: flex-end; /* Sejajarkan ke kanan */
+            color: #374151; /* Tailwind gray-700 */
+        }
+
+        /* Modal Styles - Untuk Project Iframes dan Gambar */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 2000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%; /* Max width 90% */
+            max-width: 900px; /* Specific max width */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh; /* Max height to fit viewport */
+        }
+
+        .modal-content iframe {
+            width: 100%;
+            flex-grow: 1; /* Allow iframe to take available space */
+            border: none;
+            min-height: 400px; /* Minimum height for the iframe */
+        }
+
+        /* Styling untuk gambar di dalam modal */
+        .modal-content img.modal-image {
+            max-width: 100%;
+            max-height: 80vh; /* Batasi tinggi gambar agar tidak terlalu besar */
+            height: auto;
+            display: block;
+            margin: 0 auto; /* Pusatkan gambar */
+        }
+
+        .close-modal {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 25px;
+            font-size: 35px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 2001; /* Ensure close button is clickable */
+        }
+
+        .close-modal:hover,
+        .close-modal:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Styling untuk Blog Post agar 'Read More' rata bawah */
+        .bg-white.p-6.rounded.shadow-md.blog-post-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Ini yang akan mendorong link ke bawah */
+            height: 100%; /* Pastikan tinggi kotak menyesuaikan konten */
+        }
+
+        .blog-post-content {
+            flex-grow: 1; /* Agar konten blog post mengambil ruang yang tersisa */
+        }
+
+        .blog-post-link {
+            margin-top: 1rem; /* Berikan sedikit ruang di atas link */
+        }
+    </style>
+</head>
+<body class="bg-blue-100 text-gray-800">
+    <header class="bg-white shadow">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#" class="text-xl font-bold text-gray-800">My Portfolio</a>
+            <nav class="space-x-4">
+                <a href="#home" class="text-gray-800 hover:text-gray-600">Home</a>
+                <a href="#about" class="text-gray-800 hover:text-gray-600">About</a>
+                <a href="#resume" class="text-gray-800 hover:text-gray-600">Resume</a>
+                <a href="#portfolio" class="text-gray-800 hover:text-gray-600">Portfolio</a>
+                <a href="#contact" class="text-gray-800 hover:text-gray-600">Contact</a>
+            </nav>
+        </div>
+    </header>
+
+    <section id="home" class="bg-cover bg-center h-screen" style="background-image: url('images/image-4.jpg')">
+        <div class="flex items-center justify-center h-full bg-gray-900 bg-opacity-50">
+            <div class="text-center">
+                <h1 class="text-white text-5xl font-bold">Welcome to My Portfolio</h1>
+                <p class="text-white text-xl mt-4">I am a experience technology Coach</p>
+                <a href="#contact" class="mt-6 inline-block bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Hire Me</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center">About Me</h2>
+            <div class="mt-8 flex flex-col md:flex-row items-center">
+                <img src="images/A. Hafidz.jpg" alt="A professional headshot of me" class="w-64 h-64 rounded-full mx-auto md:mx-0">
+                <div class="mt-6 md:mt-0 md:ml-6">
+                    <p class="text-lg">Hello! I'm a passionate tech coach with almost 10 years of experience in empowering individuals and teams in the tech industry. I specialize in mentoring and guiding learners in adopting new technologies and best practices.</p>
+                    <p class="mt-4 text-lg">I love fostering a growth mindset and I'm always eager to help others enhance their skills. When I'm not coaching, I enjoy listening to music, reading, and just spending quality time with my family.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="resume" class="py-20 bg-gray-100">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center">Resume</h2>
+            <div class="mt-8">
+                <h3 class="text-2xl font-bold">Experience</h3>
+                <div class="mt-4">
+                    <div class="bg-white p-6 rounded shadow-md mb-4">
+                        <h4 class="text-xl font-bold">Coding Instructor – Kalananti (Ruangguru Coding)</h4>
+                        <p class="text-gray-600">Ruang Raya Indonesia | 2025 - Present</p>
+                        <p class="mt-2">Managed engaging hybrid coding classes, ensured curriculum adherence, monitored student progress, and completed all administrative duties.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded shadow-md mb-4">
+                        <h4 class="text-xl font-bold">Web Developer (Contract)</h4>
+                        <p class="text-gray-600">Kreasi Digital Nusantara | March 2025 – April 2025</p>
+                        <p class="mt-2">Managed software/hardware installations, ensured peak performance, and provided crucial marketing support to enhance company reach.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded shadow-md mb-4">
+                        <h4 class="text-xl font-bold">Senior Coach - Leader Technology</h4>
+                        <p class="text-gray-600">Orbit Future Academy | 2020 - 2025</p>
+                        <p class="mt-2">Developed and maintained various teaching modules and learning materials, collaborated with cross-functional teams.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded shadow-md mb-4">
+                        <h4 class="text-xl font-bold">Technical Network Support Engineer</h4>
+                        <p class="text-gray-600">Cahaya Arif Abadi | 2017 - 2019</p>
+                        <p class="mt-2">Managing software and hardware installations, maintaining software and hardware performance, marketing support.</p>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold mt-8">Education</h3>
+                <div class="mt-4">
+                    <div class="bg-white p-6 rounded shadow-md mb-4">
+                        <h4 class="text-xl font-bold">Bachelor in Information Technology </h4>
+                        <p class="text-gray-600">Budi Luhur University | 2011 - 2017 </p>
+                        <p class="text-600">Major: Information Technology. </p>
+                        <p class="mt-2">Graduated with honors, specialized in web development and IOT. </p>
+                    </div>
+                    <div class="bg-white p-6 rounded shadow-md mb-4">
+                        <h4 class="text-xl font-bold">No Degree Conferred </h4>
+                        <p class="text-gray-600">Pancasila University | 1998 – 2004 </p>
+                        <p class="mt-2">Major: International Law. </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="portfolio" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center">Portfolio</h2>
+
+            <h3 class="text-2xl font-bold text-center mt-12 mb-6">Blog Posts</h3>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded shadow-md blog-post-item">
+                    <div class="blog-post-content">
+                        <img src="images/blog-1.jpg" alt="Blog post thumbnail 1" class="w-full h-48 object-cover rounded">
+                        <h3 class="text-xl font-bold mt-4">Blog Post 1</h3>
+                        <p align="justify" class="mt-2">This article is emphasizing the importance of mindful decision-making, highlighting that every choice impacts our relationships and those around us. It contrasts human awareness with robotic behavior, urging us to reflect on the consequences of our actions. By prioritizing quality time with loved ones and considering the effects of our choices, we can foster stronger connections and create a positive impact. Ultimately, it encourages making thoughtful decisions that enrich both our lives and the lives of others.</p>
+                    </div>
+                    <a href="https://theblackspotz.blogspot.com/2024/11/perjalanan-hati.html" class="text-blue-500 hover:underline mt-4 block blog-post-link" target="_blank">Read More</a>
+                </div>
+                <div class="bg-white p-6 rounded shadow-md blog-post-item">
+                    <div class="blog-post-content">
+                        <img src="images/blog-2.jpg" alt="Blog post thumbnail 2" class="w-full h-48 object-cover rounded">
+                        <h3 class="text-xl font-bold mt-4">Blog Post 2</h3>
+                        <p align="justify" class="mt-2">This article discusses “cyberpreneurship,” highlighting the role of technology and the internet for entrepreneurs to build businesses. It emphasizes opportunities for innovation and creativity, such as selling handmade products or offering online courses. Despite the challenges of digital marketing and networking, the author emphasizes the importance of perseverance and community support. The goal is to share insights through the blog, encouraging others to explore the potential of cyberpreneurship.</p>
+                    </div>
+                    <a href="https://theblackspotz.blogspot.com/2024/11/cyberpreneur.html" class="text-blue-500 hover:underline mt-4 block blog-post-link" target="_blank">Read More</a>
+                </div>
+                <div class="bg-white p-6 rounded shadow-md blog-post-item">
+                    <div class="blog-post-content">
+                        <img src="images/blog-3.jpg" alt="Blog post thumbnail 3" class="w-full h-48 object-cover rounded">
+                        <h3 class="text-xl font-bold mt-4">Blog Post 3</h3>
+                        <p align="justify" class="mt-2">This article discusses on how to earn money online and addresses common skepticism. It outlines five steps for success: choose a niche that aligns with your interests, create a blog or newsletter to share knowledge and build credibility, drive traffic to your site, foster relationships with your audience to build trust, and develop your own products or services to create value. By following these steps, individuals can effectively leverage the internet for financial success.</p>
+                    </div>
+                    <a href="https://theblackspotz.blogspot.com/2011/12/cyberpreneurship.html" class="text-blue-500 hover:underline mt-4 block blog-post-link" target="_blank">Read More</a>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-bold text-center mt-12 mb-6">Coaching Projects</h3>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded shadow-md flex flex-col justify-between">
+                    <div>
+                        <img src="images/project-1-ogm.jpg" alt="Screenshot of Project 1" class="w-full h-48 object-cover rounded cursor-pointer view-project-image-btn" data-full-src="images/project-1-ogm.jpg">
+                        <h3 class="text-xl font-bold mt-4">Project 1: OGM - Merdeka Belajar</h3>
+                        <p align="justify" class="mt-2">Coaching | This project shares a knowledge about delivering classes digitally based on 21st century learning from Microsoft with me as the trainer.</p>
+                    </div>
+                    <a href="#" class="view-project-image-btn text-blue-500 hover:underline mt-4 block" data-full-src="images/project-1-ogm.jpg">View Full Image</a>
+                </div>
+                <div class="bg-white p-6 rounded shadow-md flex flex-col justify-between">
+                    <div>
+                        <img src="images/Kampus Merdeka.jpg" alt="Screenshot of Project 2" class="w-full h-48 object-cover rounded cursor-pointer view-project-image-btn" data-full-src="images/Kampus Merdeka.jpg">
+                        <h3 class="text-xl font-bold mt-4">Project 2: Merdeka Belajar - Kampus Merdeka</h3>
+                        <p align="justify" class="mt-2">Academic | This project involves educating university students on artificial intelligence through the 'Kampus Merdeka' government initiative, with a focus on practical applications and advanced AI concepts.</p>
+                    </div>
+                    <a href="#" class="view-project-image-btn text-blue-500 hover:underline mt-4 block" data-full-src="images/Kampus Merdeka.jpg">View Full Image</a>
+                </div>
+                <div class="bg-white p-6 rounded shadow-md flex flex-col justify-between">
+                    <div>
+                        <img src="images/AI4Y.jpg" alt="Screenshot of Project 3" class="w-full h-48 object-cover rounded cursor-pointer view-project-image-btn" data-full-src="images/AI4Y.jpg">
+                        <h3 class="text-xl font-bold mt-4">Project 3: Merdeka Belajar - AI4Y</h3>
+                        <p align="justify" class="mt-2">Education | This project introduces high school students to fundamental AI concepts as part of the government-backed 'AI4Y' program, aiming to build foundational knowledge in emerging technologies.</p>
+                    </div>
+                    <a href="#" class="view-project-image-btn text-blue-500 hover:underline mt-4 block" data-full-src="images/AI4Y.jpg">View Full Image</a>
+                </div>
+            </div>
+
+            <h3 class="text-2xl font-bold text-center mt-12 mb-6">Application Projects</h3>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded shadow-md flex flex-col justify-between">
+                    <div>
+                        <img src="images/online editor.jpg" alt="Screenshot of Project 1" class="w-full h-48 object-cover rounded">
+                        <h3 class="text-xl font-bold mt-4">Project 1</h3>
+                        <p align="justify" class="mt-2"> Development | This project features an interactive online code editor, compiler, and interpreter, providing a versatile environment for users to write, execute, and debug code directly in their browser.</p>
+                    </div>
+                    <a href="#" class="view-project-btn text-blue-500 hover:underline mt-4 block" data-project-url="online-editor/code editor.html"> View Code Editor Online </a>
+                </div>
+                <div class="bg-white p-6 rounded shadow-md flex flex-col justify-between">
+                    <div>
+                        <img src="images/project-2-AI.jpg" alt="Screenshot of Project 2" class="w-full h-48 object-cover rounded">
+                        <h3 class="text-xl font-bold mt-4">Project 2</h3>
+                        <p align="justify" class="mt-2">Artificial Intelligence | An AI python application project that can be implemented in to various programs and run in any platform.</p>
+                    </div>
+                    <a href="#" class="view-project-btn text-blue-500 hover:underline mt-4 block" data-project-url="quotes_pages/quote-of-the-day.html">View Quote of the Day App</a>
+                </div>
+                <div class="bg-white p-6 rounded shadow-md flex flex-col justify-between">
+                    <div>
+                        <img src="images/project-3-kpr.jpg" alt="Screenshot of Project 3" class="w-full h-48 object-cover rounded">
+                        <h3 class="text-xl font-bold mt-4">Project 3</h3>
+                        <p align="justify" class="mt-2"> Website | A website project that provides an interactive mortgage calculator for estimating monthly home and land installments. Built with HTML, CSS, and JavaScript, the site is responsive, has a dynamic layout, and is powered by simple AI for accurate calculations. </p>
+                    </div>
+                    <a href="#" class="view-project-btn text-blue-500 hover:underline mt-4 block" data-project-url="prediksi kpr\index.html">View Website</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-center">Contact Me</h2>
+            <br></br>
+            <h3 class="text-xl font-bold text-center">Get in Touch</h3>
+            <p align="center" class="mt-4">Feel free to reach out to me for any inquiries or collaborations. I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision.</p>
+            <p align="center" class="mt-4"><i class="fas fa-envelope"></i>hafidzmurtono@gmail.com</p>
+            <p align="center" class="mt-2"><i class="fas fa-phone"></i> +6281775724797</p>
+            <p align="center" class="mt-2"><i class="fas fa-map-marker-alt"></i> Casa De' Cimanggis - 93E, Depok, Indonesia</p>
+        </div>
+    </section>
+
+    <footer class="bg-gray-800 text-white py-6">
+        <div class="container mx-auto px-6 text-center">
+            <p>&copy; 2024 My-Portfolio@hafid77. All rights reserved.</p>
+            <div class="mt-4 space-x-4">
+                <a href="https://www.tiktok.com/@hafid77277?_t=8rbBTrKmski&_r=1" class="text-white hover:text-gray-400"><i class="fab fa-tiktok"></i></a>
+                <a href="https://x.com/huffveedz77?t=w9Rw-2kZ43lGS0PndmuC9w&s=08" class="text-white hover:text-gray-400"><i class="fab fa-twitter"></i></a>
+                <a href="https://www.linkedin.com/in/abdul-hafidz-murtono" class="text-white hover:text-gray-400"><i class="fab fa-linkedin-in"></i></a>
+                <a href="https://www.github.com/hafid2130" class="text-white hover:text-gray-400"><i class="fab fa-github"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <button id="chatbot-toggle-button">
+        <i class="fas fa-comment-dots"></i>
+    </button>
+
+    <div id="simple-chatbot-container">
+        <div id="chatbot-header">
+            Chat Bot Sederhana
+            <span class="close-button" id="chatbot-close-button">&times;</span>
+        </div>
+        <div id="chatbot-body">
+            <div class="chatbot-message bot">Halo! Ada yang bisa kami bantu?</div>
+        </div>
+        <div id="chatbot-input-area">
+            <input type="text" id="chatbot-input" placeholder="Ketik pesan...">
+            <button id="chatbot-send-btn">Kirim</button>
+        </div>
+    </div>
+
+    <div id="projectIframeModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal iframe-close-button">&times;</span>
+            <iframe id="projectIframe" src="" frameborder="0"></iframe>
+        </div>
+    </div>
+
+    <div id="imageDisplayModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal image-close-button">&times;</span>
+            <img id="modalImage" src="" alt="Full size image" class="modal-image">
+        </div>
+    </div>
+
+    <script>
+        // --- Chatbot Script (Existing) ---
+        const chatbotToggleButton = document.getElementById('chatbot-toggle-button');
+        const chatbotContainer = document.getElementById('simple-chatbot-container');
+        const chatbotCloseButton = document.getElementById('chatbot-close-button');
+        const chatbotBody = document.getElementById('chatbot-body');
+        const chatbotInput = document.getElementById('chatbot-input');
+        const chatbotSendBtn = document.getElementById('chatbot-send-btn');
+
+        chatbotToggleButton.addEventListener('click', () => {
+            if (chatbotContainer.style.display === 'flex') {
+                chatbotContainer.style.display = 'none';
+                chatbotToggleButton.innerHTML = '<i class="fas fa-comment-dots"></i>';
+            } else {
+                chatbotContainer.style.display = 'flex';
+                chatbotToggleButton.innerHTML = '<i class="fas fa-times"></i>';
+            }
+        });
+
+        chatbotCloseButton.addEventListener('click', () => {
+            chatbotContainer.style.display = 'none';
+            chatbotToggleButton.innerHTML = '<i class="fas fa-comment-dots"></i>';
+        });
+
+        chatbotSendBtn.addEventListener('click', sendMessage);
+        chatbotInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const userMessage = chatbotInput.value.trim();
+            if (userMessage === '') return;
+
+            appendMessage(userMessage, 'user');
+            chatbotInput.value = '';
+
+            setTimeout(() => {
+                respondToUser(userMessage);
+            }, 500);
+        }
+
+        function appendMessage(message, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chatbot-message', sender);
+            messageDiv.textContent = message;
+            chatbotBody.appendChild(messageDiv);
+            chatbotBody.scrollTop = chatbotBody.scrollHeight;
+        }
+
+        function respondToUser(message) {
+            let botResponse = '';
+            const lowerCaseMessage = message.toLowerCase();
+
+            if (lowerCaseMessage.includes('halo') || lowerCaseMessage.includes('hai') || lowerCaseMessage.includes('selamat datang')) {
+                botResponse = 'Halo! Ada yang bisa kami bantu?';
+            } else if (lowerCaseMessage.includes('bantu') || lowerCaseMessage.includes('tanya') || lowerCaseMessage.includes('masalah')) {
+                botResponse = 'Silakan hubungi CS kami. CS kami akan segera menghubungi Anda.';
+            } else if (lowerCaseMessage.includes('terima kasih') || lowerCaseMessage.includes('makasih')) {
+                botResponse = 'Terima kasih kembali!';
+            } else {
+                botResponse = 'Silakan hubungi CS kami. CS kami akan segera menghubungi Anda.';
+            }
+
+            appendMessage(botResponse, 'bot');
+        }
+
+        // --- Modal Script for Project Iframes (Application Projects) ---
+        const projectIframeModal = document.getElementById('projectIframeModal');
+        const projectIframe = document.getElementById('projectIframe');
+        const iframeCloseButton = document.querySelector('#projectIframeModal .close-modal');
+        const viewProjectBtns = document.querySelectorAll('.view-project-btn'); // Tombol untuk aplikasi (iframe)
+
+        viewProjectBtns.forEach(btn => {
+            btn.addEventListener('click', function(event) {
+                event.preventDefault();
+                const projectUrl = this.dataset.projectUrl;
+                projectIframe.src = projectUrl;
+                projectIframeModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        iframeCloseButton.addEventListener('click', () => {
+            projectIframeModal.style.display = 'none';
+            projectIframe.src = '';
+            document.body.style.overflow = 'auto';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target == projectIframeModal) {
+                projectIframeModal.style.display = 'none';
+                projectIframe.src = '';
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // --- Modal Script for Image Display (Coaching Projects) ---
+        const imageDisplayModal = document.getElementById('imageDisplayModal');
+        const modalImage = document.getElementById('modalImage');
+        const imageCloseButton = document.querySelector('#imageDisplayModal .close-modal');
+        const viewProjectImageBtns = document.querySelectorAll('.view-project-image-btn'); // Tombol untuk gambar (coaching)
+
+        viewProjectImageBtns.forEach(btn => {
+            btn.addEventListener('click', function(event) {
+                event.preventDefault();
+                const fullSrc = this.dataset.fullSrc;
+                modalImage.src = fullSrc;
+                imageDisplayModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            });
+        });
+
+        imageCloseButton.addEventListener('click', () => {
+            imageDisplayModal.style.display = 'none';
+            modalImage.src = '';
+            document.body.style.overflow = 'auto';
+        });
+
+        window.addEventListener('click', (event) => {
+            if (event.target == imageDisplayModal) {
+                imageDisplayModal.style.display = 'none';
+                modalImage.src = '';
+                document.body.style.overflow = 'auto';
+            }
+        });
+    </script>
+</body>
+</html>
