@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote of the Day</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            /* Baris di bawah ini adalah tempat gambar latar belakang Anda diletakkan. */
+            /* Pastikan file 'Gemini_Generated_Image.jpg' berada di folder yang sama dengan file HTML ini. */
+            background-image: url('Gemini_Generated_Image.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+        #quote-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 80%;
+            width: 400px;
+        }
+        #quote {
+            font-size: 24px;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        #author {
+            font-size: 18px;
+            font-style: italic;
+            color: #4CAF50;
+            margin-top: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3f8a41;
+        }
+        @media screen and (max-width: 480px) {
+            #quote-container {
+                width: 90%;
+            }
+        }
+        /* Animation */
+        .animated {
+            animation-duration: 5s;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .fadeIn {
+            animation-name: fadeIn;
+        }
+    </style>
+</head>
+<body>
+    <div id="quote-container">
+        <div id="quote" class="animated fadeIn"></div>
+        <div id="author" class="animated fadeIn"></div>
+        <button id="new-quote" onclick="getNewQuote()">New Quote</button>
+    </div>
+    <script>
+        function getNewQuote() {
+            fetch('https://api.quotable.io/random')
+                .then(response => response.json())
+                .then(data => {
+                    const quoteElement = document.getElementById('quote');
+                    const authorElement = document.getElementById('author');
+                    
+                    // Hapus kelas animasi untuk reset
+                    quoteElement.classList.remove('animated', 'fadeIn');
+                    authorElement.classList.remove('animated', 'fadeIn');
+                    
+                    // Tambahkan timeout singkat untuk memungkinkan reset animasi
+                    setTimeout(() => {
+                        quoteElement.textContent = data.content;
+                        authorElement.textContent = '— ' + data.author;
+                        // Tambahkan kembali kelas animasi
+                        quoteElement.classList.add('animated', 'fadeIn');
+                        authorElement.classList.add('animated', 'fadeIn');
+                    }, 100); // Timeout singkat, misalnya 100ms
+                })
+                .catch(error => {
+                    console.error('Error fetching quote:', error);
+                    document.getElementById('quote').textContent = 'Oops! Something went wrong. Please try again.';
+                    document.getElementById('author').textContent = '';
+                });
+        }
+        // Panggil fungsi saat halaman dimuat pertama kali
+        getNewQuote();
+    </script>
+</body>
+</html>
